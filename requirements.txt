@@ -4,3 +4,4 @@ openpyxl
 nltk
 gensim
 scikit-learn
+gunicorn
