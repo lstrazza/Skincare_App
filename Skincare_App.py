@@ -9,6 +9,7 @@ from gensim.models import LdaModel
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import nltk
+import os
 
 nltk.download('punkt')
 nltk.download('stopwords')
