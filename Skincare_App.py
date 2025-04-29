@@ -114,22 +114,111 @@ def recommend_products(user_input, df, key_tags, key_topics, top_n=5):
 
 # HTML Template
 HTML_TEMPLATE = """
-<!doctype html>
-<title>Sephora Product Recommender</title>
-<h2>Enter your skincare needs:</h2>
-<form action="/" method="post">
-  <input type="text" name="user_input" style="width: 300px;">
-  <input type="submit" value="Recommend">
-</form>
-{% if recommendations %}
-    <h3>Matched Tags: {{ matched_tags }}</h3>
-    <h3>Recommended Products:</h3>
-    <ul>
-    {% for rec in recommendations %}
-        <li><strong>{{ rec.Brand }}</strong>: {{ rec.Product_Name }}<br><em>{{ rec.Description }}</em></li>
-    {% endfor %}
-    </ul>
-{% endif %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Skincare Recommender</title>
+    <style>
+        body {
+            background-color: pink;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .container {
+            display: flex;
+            align-items: flex-start;
+            gap: 40px;
+        }
+
+        .left-panel {
+            width: 200px;
+        }
+
+        .right-panel {
+            flex: 1;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .recommendations {
+            margin-top: 20px;
+            background-color: #fff0f5;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        h3, h4 {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>🧴 Skincare Recommendation App</h2>
+
+    <form method="POST">
+        <div class="container">
+            <!-- LEFT SIDE: Radio + Dropdown -->
+            <div class="left-panel">
+                <strong>Type:</strong><br>
+                <input type="radio" id="skin" name="type" value="Skin">
+                <label for="skin">Skin</label><br>
+
+                <input type="radio" id="lips" name="type" value="Lips">
+                <label for="lips">Lips</label><br>
+
+                <input type="radio" id="eyes" name="type" value="Eyes">
+                <label for="eyes">Eyes</label><br>
+
+                <input type="radio" id="bath" name="type" value="Bath">
+                <label for="bath">Bath</label><br>
+
+                <input type="radio" id="body" name="type" value="Body">
+                <label for="body">Body</label><br><br>
+
+                <label for="skin_type"><strong>Skin Type:</strong></label><br>
+                <select name="skin_type" id="skin_type">
+                    <option value="Sensitive">Sensitive</option>
+                    <option value="Dry">Dry</option>
+                    <option value="Oily">Oily</option>
+                    <option value="Combination">Combination</option>
+                </select><br><br>
+            </div>
+
+            <!-- RIGHT SIDE: Textarea + Recommendations -->
+            <div class="right-panel">
+                <label for="skincare_input"><strong>Description:</strong></label><br>
+                <textarea name="skincare_input" rows="4" placeholder="Describe your skincare needs...">I want something moisturizing that improves skin texture and hydrates deeply.</textarea><br><br>
+
+                <input type="submit" value="Get Recommendations">
+
+                {% if tags %}
+                    <h4>Matched Tags: {{ tags | join(", ") }}</h4>
+                {% endif %}
+
+                {% if results %}
+                    <div class="recommendations">
+                        <h3>Recommended Products:</h3>
+                        <ul>
+                            {% for product in results %}
+                                <li>
+                                    <strong>{{ product.Product_Name }}</strong><br>
+                                    Rating: {{ product.Rating }}<br>
+                                    Ingredients: {{ product.Ingredients }}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </form>
+</body>
+</html>
+
 """
 
 # Routes
@@ -145,4 +234,5 @@ def home():
 
 # Run app
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))  # Default to 10000 if PORT isn't set
+    app.run(host='0.0.0.0', port=port)
