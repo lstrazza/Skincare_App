@@ -220,6 +220,7 @@ HTML_TEMPLATE = """
 </body>
 </html>
 
+
 """
 
 # Routes
@@ -228,12 +229,13 @@ def home():
     recommendations = []
     matched_tags = []
     if request.method == "POST":
-        user_input = request.form["user_input"]
+        user_input = request.form["skincare_input"]
         recs, matched_tags = recommend_products(user_input, sephora_data, KEY_TAGS, key_topics)
         recommendations = recs.to_dict(orient='records')
-    return render_template_string(HTML_TEMPLATE, recommendations=recommendations, matched_tags=matched_tags)
+    return render_template_string(HTML_TEMPLATE, tags=matched_tags, results=recommendations)
 
 # Run app
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))  # Default to 10000 if PORT isn't set
     app.run(host='0.0.0.0', port=port)
