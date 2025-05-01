@@ -1,9 +1,9 @@
-from flask import Flask, request, render_template_string
+import dash
+from dash import dcc, html, Input, Output
 import pandas as pd
 import numpy as np
 import re
 from collections import Counter
-from sklearn.feature_extraction.text import ENGLISH_STOP_WORDS
 from gensim import corpora
 from gensim.models import LdaModel
 from nltk.corpus import stopwords
@@ -11,14 +11,10 @@ from nltk.tokenize import word_tokenize
 import nltk
 import os
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('punkt_tab')
+# Dash Setup
+app = dash.Dash(__name__)
 
-# Flask setup
-app = Flask(__name__)
-
-# Load data
+# Load Data
 sephora_data = pd.read_excel("Sephora_Description1.1.xlsx")
 sephora_data['Description'] = sephora_data['Description'].fillna('')
 
@@ -113,129 +109,79 @@ def recommend_products(user_input, df, key_tags, key_topics, top_n=5):
     recommended = recommended[['Brand', 'Product_Name', 'Description']].head(top_n)
     return recommended, matched
 
-# HTML Template
-HTML_TEMPLATE = """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Skincare Recommender</title>
-    <style>
-        body {
-            background-color: pink;
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
+# App Layout
+app.layout = html.Div(
+    children=[
+        html.H2("🧴 Skincare Recommendation App"),
+        html.Div([
+            # Left panel
+            html.Div([
+                html.Strong("Type:"),
+                dcc.RadioItems(
+                    id="type-radio",
+                    options=[
+                        {"label": "Skin", "value": "Skin"},
+                        {"label": "Lips", "value": "Lips"},
+                        {"label": "Eyes", "value": "Eyes"},
+                        {"label": "Bath", "value": "Bath"},
+                        {"label": "Body", "value": "Body"}
+                    ],
+                    value="Skin",
+                    labelStyle={'display': 'block'}
+                ),
+                html.Label("Skin Type:"),
+                dcc.Dropdown(
+                    id="skin-type-dropdown",
+                    options=[
+                        {"label": "Sensitive", "value": "Sensitive"},
+                        {"label": "Dry", "value": "Dry"},
+                        {"label": "Oily", "value": "Oily"},
+                        {"label": "Combination", "value": "Combination"}
+                    ],
+                    value="Sensitive"
+                ),
+            ], style={'width': '30%'}),
+            
+            # Right panel
+            html.Div([
+                html.Label("Description:"),
+                dcc.Textarea(
+                    id="skincare-input",
+                    value="I want something moisturizing that improves skin texture and hydrates deeply.",
+                    style={"width": "100%", "height": 100}
+                ),
+                html.Button("Get Recommendations", id="submit-btn", n_clicks=0),
+                
+                html.Div(id="tags-output"),
+                html.Div(id="recommendations-output")
+            ], style={'width': '70%'})
+        ], style={'display': 'flex'}),
+    ]
+)
 
-        .container {
-            display: flex;
-            align-items: flex-start;
-            gap: 40px;
-        }
+# Callback for generating recommendations
+@app.callback(
+    [Output("tags-output", "children"),
+     Output("recommendations-output", "children")],
+    [Input("submit-btn", "n_clicks")],
+    [dash.dependencies.State("skincare-input", "value")]
+)
+def update_recommendations(n_clicks, user_input):
+    if n_clicks > 0:
+        recommendations, matched_tags = recommend_products(user_input, sephora_data, KEY_TAGS, key_topics)
+        tag_output = f"Matched Tags: {', '.join(matched_tags)}" if matched_tags else "No matching tags found."
+        if recommendations:
+            recs = [
+                html.Li(f"{rec['Product_Name']} - {rec['Description']}") 
+                for rec in recommendations
+            ]
+            recommendations_output = html.Ul(recs)
+        else:
+            recommendations_output = "No recommendations available."
+        
+        return tag_output, recommendations_output
+    return "", ""
 
-        .left-panel {
-            width: 200px;
-        }
-
-        .right-panel {
-            flex: 1;
-        }
-
-        textarea {
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .recommendations {
-            margin-top: 20px;
-            background-color: #fff0f5;
-            padding: 10px;
-            border-radius: 8px;
-        }
-
-        h3, h4 {
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
-    <h2>🧴 Skincare Recommendation App</h2>
-
-    <form method="POST">
-        <div class="container">
-            <!-- LEFT SIDE: Radio + Dropdown -->
-            <div class="left-panel">
-                <strong>Type:</strong><br>
-                <input type="radio" id="skin" name="type" value="Skin">
-                <label for="skin">Skin</label><br>
-
-                <input type="radio" id="lips" name="type" value="Lips">
-                <label for="lips">Lips</label><br>
-
-                <input type="radio" id="eyes" name="type" value="Eyes">
-                <label for="eyes">Eyes</label><br>
-
-                <input type="radio" id="bath" name="type" value="Bath">
-                <label for="bath">Bath</label><br>
-
-                <input type="radio" id="body" name="type" value="Body">
-                <label for="body">Body</label><br><br>
-
-                <label for="skin_type"><strong>Skin Type:</strong></label><br>
-                <select name="skin_type" id="skin_type">
-                    <option value="Sensitive">Sensitive</option>
-                    <option value="Dry">Dry</option>
-                    <option value="Oily">Oily</option>
-                    <option value="Combination">Combination</option>
-                </select><br><br>
-            </div>
-
-            <!-- RIGHT SIDE: Textarea + Recommendations -->
-            <div class="right-panel">
-                <label for="skincare_input"><strong>Description:</strong></label><br>
-                <textarea name="skincare_input" rows="4" placeholder="Describe your skincare needs...">I want something moisturizing that improves skin texture and hydrates deeply.</textarea><br><br>
-
-                <input type="submit" value="Get Recommendations">
-
-                {% if tags %}
-                    <h4>Matched Tags: {{ tags | join(", ") }}</h4>
-                {% endif %}
-
-                {% if results %}
-                    <div class="recommendations">
-                        <h3>Recommended Products:</h3>
-                        <ul>
-                            {% for product in results %}
-                                <li>
-                                    <strong>{{ product.Product_Name }}</strong><br>
-                                    Rating: {{ product.Rating }}<br>
-                                    Ingredients: {{ product.Ingredients }}
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </form>
-</body>
-</html>
-
-
-"""
-
-# Routes
-@app.route("/", methods=["GET", "POST"])
-def home():
-    recommendations = []
-    matched_tags = []
-    if request.method == "POST":
-        user_input = request.form["skincare_input"]
-        recs, matched_tags = recommend_products(user_input, sephora_data, KEY_TAGS, key_topics)
-        recommendations = recs.to_dict(orient='records')
-    return render_template_string(HTML_TEMPLATE, tags=matched_tags, results=recommendations)
-
-# Run app
-
+# Run the app
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # Default to 10000 if PORT isn't set
-    app.run(host='0.0.0.0', port=port)
+    app.run_server(debug=True)
