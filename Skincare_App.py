@@ -11,6 +11,10 @@ from nltk.tokenize import word_tokenize
 import nltk
 import os
 
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('punkt_tab')
+
 # Dash Setup
 app = dash.Dash(__name__)
 
