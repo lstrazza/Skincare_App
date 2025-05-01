@@ -13,7 +13,7 @@ import os
 
 nltk.download('punkt')
 nltk.download('stopwords')
-nltk.download('punkt_tab')
+
 
 # Dash Setup
 app = dash.Dash(__name__)
@@ -23,9 +23,11 @@ sephora_data = pd.read_excel("Sephora_Description1.1.xlsx")
 sephora_data['Description'] = sephora_data['Description'].fillna('')
 
 # Preprocess for LDA
+stop_words = set(stopwords.words('english'))
+
 def preprocess(text):
     tokens = word_tokenize(text.lower())
-    return [word for word in tokens if word.isalpha() and word not in stopwords.words('english')]
+    return [word for word in tokens if word.isalpha() and word not in stop_words]
 
 texts = sephora_data['Description'].apply(preprocess).tolist()
 dictionary = corpora.Dictionary(texts)
@@ -89,8 +91,8 @@ key_topics = [
 
 # Match user input to topic
 def match_description_to_topic(user_description, key_tags, key_topics):
-    user_words = user_description.lower().split()
-    matched_tags = [tag for tag in key_tags if tag in user_words]
+    user_tokens = set(word_tokenize(user_description.lower()))
+    matched_tags = [tag for tag in key_tags if tag in user_tokens]
 
     topic_scores = []
     for i, topic in enumerate(key_topics):
@@ -144,7 +146,7 @@ app.layout = html.Div(
                     ],
                     value="Sensitive"
                 ),
-            ], style={'width': '30%'}),
+            ], style={'width': '30%', 'padding': '10px', 'box-sizing': 'border-box'}),
             
             # Right panel
             html.Div([
@@ -159,7 +161,7 @@ app.layout = html.Div(
                 html.Div(id="tags-output"),
                 html.Div(id="recommendations-output")
             ], style={'width': '70%'})
-        ], style={'display': 'flex'}),
+        ], style={'width': '30%', 'padding': '10px', 'box-sizing': 'border-box'}),
     ]
 )
 
@@ -186,6 +188,8 @@ def update_recommendations(n_clicks, user_input):
         return tag_output, recommendations_output
     return "", ""
 
+
+server = app.server
 # Run the app
 if __name__ == "__main__":
     app.run_server(debug=True)
