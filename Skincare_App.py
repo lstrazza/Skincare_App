@@ -1,5 +1,5 @@
 import dash
-from dash import dcc, html, Input, Output
+from dash import dcc, html, Input, Output, Dash
 import pandas as pd
 import numpy as np
 import re
@@ -10,14 +10,14 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 import nltk
 import os
+import dash_bootstrap_components as dbc
 
 nltk.download('punkt')
 nltk.download('stopwords')
-nltk.download('punkt_tab')
 
 
 # Dash Setup
-app = dash.Dash(__name__)
+app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
 
 # Load Data
 sephora_data = pd.read_excel("Sephora_Description1.1.xlsx")
@@ -107,65 +107,119 @@ def match_description_to_topic(user_description, key_tags, key_topics):
 
 # Recommendation function
 def recommend_products(user_input, df, key_tags, key_topics, top_n=5):
+    print(f"\n[recommend_products] Called with user_input: '{user_input}'")
+    
     topic_index, matched = match_description_to_topic(user_input, key_tags, key_topics)
+    
+    print(f"[recommend_products] Topic index: {topic_index}")
+    print(f"[recommend_products] Matched tags: {matched}")
 
     if topic_index is None:
+        print("[recommend_products] No matching topic found. Returning empty list.")
         return [], matched
 
     recommended = df[df['main_topic'] == topic_index].copy()
-    recommended = recommended[['Brand', 'Product_Name', 'Description']].head(top_n)
+    print(f"[recommend_products] Number of products matched with topic {topic_index}: {len(recommended)}")
+
+    print("Columns in recommended:", recommended.columns.tolist())
+    recommended = recommended[['brand_name', 'product_name', 'Description']].head(top_n)
+    print(f"[recommend_products] Returning top {len(recommended)} recommendations")
+
     return recommended, matched
+
 
 # App Layout
 app.layout = html.Div(
+    style={
+        'backgroundColor': '#f5f9f6',  # sage-inspired soft green background
+        'fontFamily': 'Helvetica Neue, sans-serif',
+        'padding': '40px'
+    },
     children=[
-        html.H2("🧴 Skincare Recommendation App"),
         html.Div([
+            html.H1("🌿 Skincare Matchmaker", style={
+                'textAlign': 'center',
+                'color': '#3a5a40',
+                'fontSize': '3em',
+                'fontWeight': 'bold',
+                'marginBottom': '20px',
+                'fontFamily': 'Georgia, serif'
+            }),
+            html.H5("Get matched with your glow-up essentials", style={
+                'textAlign': 'center',
+                'color': '#6c757d',
+                'marginBottom': '40px'
+            })
+        ]),
+
+        dbc.Row([
             # Left panel
-            html.Div([
-                html.Strong("Type:"),
-                dcc.RadioItems(
-                    id="type-radio",
-                    options=[
-                        {"label": "Skin", "value": "Skin"},
-                        {"label": "Lips", "value": "Lips"},
-                        {"label": "Eyes", "value": "Eyes"},
-                        {"label": "Bath", "value": "Bath"},
-                        {"label": "Body", "value": "Body"}
-                    ],
-                    value="Skin",
-                    labelStyle={'display': 'block'}
-                ),
-                html.Label("Skin Type:"),
-                dcc.Dropdown(
-                    id="skin-type-dropdown",
-                    options=[
-                        {"label": "Sensitive", "value": "Sensitive"},
-                        {"label": "Dry", "value": "Dry"},
-                        {"label": "Oily", "value": "Oily"},
-                        {"label": "Combination", "value": "Combination"}
-                    ],
-                    value="Sensitive"
-                ),
-            ], style={'width': '30%', 'padding': '10px', 'box-sizing': 'border-box'}),
-            
+            dbc.Col([
+                html.Div([
+                    html.Label("Choose Your Category", style={'fontWeight': 'bold', 'color': '#3a5a40'}),
+                    dcc.RadioItems(
+                        id="type-radio",
+                        options=[
+                            {"label": "Skin", "value": "Skin"},
+                            {"label": "Lips", "value": "Lips"},
+                            {"label": "Eyes", "value": "Eyes"},
+                            {"label": "Bath", "value": "Bath"},
+                            {"label": "Body", "value": "Body"}
+                        ],
+                        value="Skin",
+                        labelStyle={'display': 'block', 'margin': '5px 0'},
+                        inputStyle={'marginRight': '10px'}
+                    ),
+
+                    html.Label("Your Skin Type", style={'fontWeight': 'bold', 'marginTop': '20px', 'color': '#3a5a40'}),
+                    dcc.Dropdown(
+                        id="skin-type-dropdown",
+                        options=[
+                            {"label": "Sensitive", "value": "Sensitive"},
+                            {"label": "Dry", "value": "Dry"},
+                            {"label": "Oily", "value": "Oily"},
+                            {"label": "Combination", "value": "Combination"}
+                        ],
+                        value="Sensitive",
+                        style={"marginBottom": "30px"}
+                    )
+                ], style={
+                    'padding': '30px',
+                    'backgroundColor': '#ffffff',
+                    'borderRadius': '15px',
+                    'boxShadow': '0 4px 10px rgba(0,0,0,0.05)'
+                })
+            ], width=4),
+
             # Right panel
-            html.Div([
-                html.Label("Description:"),
-                dcc.Textarea(
-                    id="skincare-input",
-                    value="I want something moisturizing that improves skin texture and hydrates deeply.",
-                    style={"width": "100%", "height": 100}
-                ),
-                html.Button("Get Recommendations", id="submit-btn", n_clicks=0),
-                
-                html.Div(id="tags-output"),
-                html.Div(id="recommendations-output")
-            ], style={'width': '70%'})
-        ], style={'width': '30%', 'padding': '10px', 'box-sizing': 'border-box'}),
+            dbc.Col([
+                html.Div([
+                    html.Label("Tell us what you're looking for", style={'fontWeight': 'bold', 'color': '#3a5a40'}),
+                    dcc.Textarea(
+                        id="skincare-input",
+                        value="I want something moisturizing that improves skin texture and hydrates deeply.",
+                        style={"width": "100%", "height": 120, 'marginBottom': '20px'}
+                    ),
+                    dbc.Button("✨ Get Recommendations", id="submit-btn", n_clicks=0, color="success", className="mb-3"),
+
+                    html.Div(id="tags-output", style={'marginTop': '20px'}),
+                    html.Div(id="recommendations-output", style={
+                        'marginTop': '20px',
+                        'backgroundColor': '#ffffff',
+                        'padding': '20px',
+                        'borderRadius': '15px',
+                        'boxShadow': '0 4px 10px rgba(0,0,0,0.05)'
+                    })
+                ], style={
+                    'padding': '30px',
+                    'backgroundColor': '#e9f5f1',
+                    'borderRadius': '15px',
+                    'boxShadow': 'inset 0 0 6px rgba(0,0,0,0.03)'
+                })
+            ], width=8)
+        ], justify="center")
     ]
 )
-
 # Callback for generating recommendations
 @app.callback(
     [Output("tags-output", "children"),
@@ -174,20 +228,39 @@ app.layout = html.Div(
     [dash.dependencies.State("skincare-input", "value")]
 )
 def update_recommendations(n_clicks, user_input):
+    print(f"Function called with n_clicks={n_clicks} and user_input='{user_input}'")
+    
     if n_clicks > 0:
+        print("n_clicks > 0, generating recommendations...")
         recommendations, matched_tags = recommend_products(user_input, sephora_data, KEY_TAGS, key_topics)
+        
+        print(f"Matched tags: {matched_tags}")
+        print(f"Number of recommendations: {0 if recommendations is None or recommendations.empty else len(recommendations)}")
+        
         tag_output = f"Matched Tags: {', '.join(matched_tags)}" if matched_tags else "No matching tags found."
-        if recommendations:
+        
+        if recommendations is not None and not recommendations.empty:
             recs = [
-                html.Li(f"{rec['Product_Name']} - {rec['Description']}") 
-                for rec in recommendations
+                html.Li([
+                    html.Strong(row.get('product_name', 'Unnamed Product')),
+                    html.Details([
+                        html.Summary("Description"),
+                        html.P(row.get('Description', 'No description available'))
+                    ])
+                ])
+                for _, row in recommendations.iterrows()
             ]
+
             recommendations_output = html.Ul(recs)
         else:
             recommendations_output = "No recommendations available."
         
+        print("Returning tag_output and recommendations_output")
         return tag_output, recommendations_output
+
+    print("n_clicks <= 0, returning empty outputs")
     return "", ""
+
 
 
 server = app.server
