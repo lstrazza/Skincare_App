@@ -6,3 +6,4 @@ gensim
 scikit-learn
 gunicorn
 dash
+dash_bootstrap_components
