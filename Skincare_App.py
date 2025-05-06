@@ -49,12 +49,17 @@ sephora_data['desc_clean'] = sephora_data['Description'].apply(preprocess_descri
 
 # Tags and topics
 KEY_TAGS = [
-    'moisturizing', 'hydrating', 'soothing', 'anti-inflammatory', 'brightening',
+      'moisturizing', 'hydrating', 'soothing', 'anti-inflammatory', 'brightening',
     'firming', 'anti-aging', 'nourishing', 'acne', 'oily', 'dry', 'sensitive',
     'eye', 'lip', 'body', 'face', 'redness', 'softening', 'elasticity', 'stabilizes',
     'moisture', 'moisturizes', 'enhances', 'protects', 'texture', 'ph', 'hydrates',
     'improves', 'provides', 'prevents', 'adds', 'product', 'softens', 'formulations',
-    'hydration', 'agent', 'balances', 'draws', 'into'
+    'hydration', 'agent', 'balances', 'draws', 'into', 'antioxidant', 'hydration',
+    'exfoliating', 'clarifying', 'calming', 'rejuvenating', 'plumping', 'smoothing',
+    'detoxifying', 'non-comedogenic', 'fragrance-free', 'hypoallergenic', 'blemish',
+    'uneven tone', 'wrinkles', 'sun protection', 'SPF', 'dewy', 'mattifying',
+    'barrier repair', 'cleanse', 'cleanser', 'toner', 'serum', 'cream', 'lotion',
+    'oil', 'mask', 'peptides', 'retinol', 'niacinamide', 'hyaluronic', 'ceramides'
 ]
 
 key_topics = [
