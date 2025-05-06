@@ -14,7 +14,7 @@ import dash_bootstrap_components as dbc
 
 nltk.download('punkt')
 nltk.download('stopwords')
-
+nltk.download('punkt_tab')
 
 # Dash Setup
 app = Dash(__name__, external_stylesheets=[dbc.themes.LUX])
